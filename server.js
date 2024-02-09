@@ -8,6 +8,8 @@ jinja.configure("./static/template", {
     express: app
 });
 
+app.set("views","./static/template")
+app.set("view engine","html");
 app.set("json spaces", 2);
 
 //アクセスログミドルウェア
@@ -18,13 +20,11 @@ app.use(function (req, res, next) {
     console.log(`${reqDate} Access "${reqUrl}" from ${srcIpAddr}`);
     next();
 });
-
-//静的ファイルのルーティング
+//postデータハンドリングのためのミドルウェア
+app.use(express.urlencoded({extended: true}));
+//静的ファイルのルーティングを行うミドルウェア
 app.use(express.static("./static", { fallthrough: true }));
-//起動
-app.listen(port, () => {
-    console.log("server started on port:" + port);
-});
+
 
 //ルーティングテスト
 app.get("/test", function (req, res) {
@@ -41,17 +41,30 @@ app.get("/api/:userId", function (req, res) {
         });
 });
 
+//テンプレートエンジンによるカウントページのテスト
 let count = 0;
 app.get("/template",function (req, res){
     count++;
     res.render("sample.html",{counter:count});
-})
+});
+
+//テンプレートの継承とpostのテスト実装
+app.get("/create",function (req, res){
+    res.render("create.html");
+});
+app.post("/create",function (req, res){
+    console.log(req.body);
+    res.render("create.html");
+});
 
 
-
-
-
-//ルーティングのエラーハンドリング
+//ルーティングの404エラーハンドリング
 app.use(function (req, res, next) {
     res.status(404).send('ERROR 404 not found');
+});
+
+
+//起動
+app.listen(port, () => {
+    console.log("server started on port:" + port);
 });

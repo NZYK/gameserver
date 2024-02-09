@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}
+    <title>create</title>
+{% endblock %}
+{% block content %}
+<div class="container">
+        <form method="post" action="create">
+            <ul>
+                <li><a>クリエイターid</a><input type="text" class="text" name="creater_id"></li>
+                <li><a>タイトル</a><input type="text" class="text" name="title"></li>
+                <li><a>記事内容</a><textarea rows="4" class="text" name="article"></textarea></li>
+                <li><input type="submit" value="登録"></li>
+            </ul>
+        </form>
+</div>
+{% endblock %}
