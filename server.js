@@ -1,6 +1,12 @@
 const express = require("express");
 const app = express();
 const port = 8080;
+//ほぼjinja2のテンプレートエンジンをインポート
+const jinja = require("nunjucks");
+jinja.configure("./static/template", {
+    autoscape: true,
+    express: app
+});
 
 app.set("json spaces", 2);
 
@@ -20,10 +26,12 @@ app.listen(port, () => {
     console.log("server started on port:" + port);
 });
 
+//ルーティングテスト
 app.get("/test", function (req, res) {
     res.send("テストです")
 });
 
+//WebAPIとuserIdをgetするテスト
 app.get("/api/:userId", function (req, res) {
     res.json(
         {
@@ -32,6 +40,15 @@ app.get("/api/:userId", function (req, res) {
             attr: { age: 30, sex: "male" }
         });
 });
+
+let count = 0;
+app.get("/template",function (req, res){
+    count++;
+    res.render("sample.html",{counter:count});
+})
+
+
+
 
 
 //ルーティングのエラーハンドリング
