@@ -1,21 +1,31 @@
+require('dotenv').config();
 const express = require("express");
 const app = express();
 const port = 8080;
 //セッションをインポート（サーバー側にセッションデータを持たせる）
 const session = require("express-session");
+const mysqlSession = require("express-mysql-session")(session);
+const mysqlOptions = {
+    host: "localhost",
+    port: process.env.MYSQL_PORT,
+    user: process.env.MYSQL_USERNAME,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE
+};
 const memoryStore = new session.MemoryStore;
+const mysqlStore = new mysqlSession(mysqlOptions);
 const sess = {
     secret: "NZYKsecret",
     resave: false, //セッション内容に変更がないときにはデータをリセーブしない
     saveUninitialized: true, //初期化されていないセッションも保存するか:true
     cookie: {maxAge: 1000 * 60 * 60 * 24 * 30}, //保持期間 1000ms * 60sec * 60min * 24hours * 30 days
-    store: memoryStore //セッションの保存先
+    store: mysqlStore //セッションの保存先
 };
 //本番環境に移したときのみ実行する設定
 if (app.get("env") === "production"){
     app.set("trust proxy", 1);//プロキシサーバーから1番目をクライアントのIPとして扱う
     sess.cookie.secure = true;//HTTPSによるアクセス時のみcookieを有効化する
-}
+};
 //ほぼjinja2のテンプレートエンジンをインポート
 const jinja = require("nunjucks");
 jinja.configure("./static/template", {
@@ -75,7 +85,6 @@ app.post("/create",function (req, res){
 
 //セッション利用のテスト
 app.get("/session", function (req, res){
-    console.log(req.session);
     if (req.session.counter){
         req.session.counter++;
     }else{
