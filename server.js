@@ -4,25 +4,31 @@ const app = express();
 const port = 8080;
 //セッションをインポート（サーバー側にセッションデータを持たせる）
 const session = require("express-session");
-const mysqlSession = require("express-mysql-session")(session);
-const mysqlOptions = {
-    host: "localhost",
-    port: process.env.MYSQL_PORT,
-    user: process.env.MYSQL_USERNAME,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE
+var sessionStore;
+//.env内の環境変数によってセッションに使用するDBを使い分ける
+if (process.env.USE_DB_FOR_SESSION === "mysql") {
+    const mysqlSession = require("express-mysql-session")(session);
+    const mysqlOptions = {
+        host: "localhost",
+        port: process.env.MYSQL_PORT,
+        user: process.env.MYSQL_USERNAME,
+        password: process.env.MYSQL_PASSWORD,
+        database: process.env.MYSQL_DATABASE
+    };
+    sessionStore = new mysqlSession(mysqlOptions);
+} else {
+    sessionStore = new session.MemoryStore;
 };
-const memoryStore = new session.MemoryStore;
-const mysqlStore = new mysqlSession(mysqlOptions);
+//セッション用の設定
 const sess = {
     secret: "NZYKsecret",
     resave: false, //セッション内容に変更がないときにはデータをリセーブしない
     saveUninitialized: true, //初期化されていないセッションも保存するか:true
-    cookie: {maxAge: 1000 * 60 * 60 * 24 * 30}, //保持期間 1000ms * 60sec * 60min * 24hours * 30 days
-    store: mysqlStore //セッションの保存先
+    cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 }, //保持期間 1000ms * 60sec * 60min * 24hours * 30 days
+    store: sessionStore //セッションの保存先
 };
 //本番環境に移したときのみ実行する設定
-if (app.get("env") === "production"){
+if (app.get("env") === "production") {
     app.set("trust proxy", 1);//プロキシサーバーから1番目をクライアントのIPとして扱う
     sess.cookie.secure = true;//HTTPSによるアクセス時のみcookieを有効化する
 };
@@ -33,8 +39,8 @@ jinja.configure("./static/template", {
     express: app
 });
 
-app.set("views","./static/template")
-app.set("view engine","html");
+app.set("views", "./static/template")
+app.set("view engine", "html");
 app.set("json spaces", 2);
 //セッションミドルウェア
 app.use(session(sess));
@@ -47,7 +53,7 @@ app.use(function (req, res, next) {
     next();
 });
 //postデータハンドリングのためのミドルウェア
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 //静的ファイルのルーティングを行うミドルウェア
 app.use(express.static("./static", { fallthrough: true }));
 
@@ -69,25 +75,25 @@ app.get("/api/:userId", function (req, res) {
 
 //テンプレートエンジンによるカウントページのテスト
 let count = 0;
-app.get("/template",function (req, res){
+app.get("/template", function (req, res) {
     count++;
-    res.render("sample.html",{counter:count});
+    res.render("sample.html", { counter: count });
 });
 
 //テンプレートの継承とpostのテスト実装
-app.get("/create",function (req, res){
+app.get("/create", function (req, res) {
     res.render("create.html");
 });
-app.post("/create",function (req, res){
+app.post("/create", function (req, res) {
     console.log(req.body);
     res.render("create.html");
 });
 
 //セッション利用のテスト
-app.get("/session", function (req, res){
-    if (req.session.counter){
+app.get("/session", function (req, res) {
+    if (req.session.counter) {
         req.session.counter++;
-    }else{
+    } else {
         req.session.counter = 1;
     }
     res.send(`<html><body>
