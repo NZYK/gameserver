@@ -1,11 +1,16 @@
+//.envファイル内の変数を環境変数として扱うモジュールを有効化
 require('dotenv').config();
+
+//expressの初期設定
 const express = require("express");
 const app = express();
 const port = 8080;
-//セッションをインポート（サーバー側にセッションデータを持たせる）
+
+//セッションモジュールをインポート（サーバー側にセッションデータを持たせる）
 const session = require("express-session");
-var sessionStore;
+
 //.env内の環境変数によってセッションに使用するDBを使い分ける
+let sessionStore;
 if (process.env.USE_DB_FOR_SESSION === "mysql") {
     const mysqlSession = require("express-mysql-session")(session);
     const mysqlOptions = {
@@ -32,18 +37,22 @@ if (app.get("env") === "production") {
     app.set("trust proxy", 1);//プロキシサーバーから1番目をクライアントのIPとして扱う
     sess.cookie.secure = true;//HTTPSによるアクセス時のみcookieを有効化する
 };
+
 //ほぼjinja2のテンプレートエンジンをインポート
 const jinja = require("nunjucks");
 jinja.configure("./static/template", {
     autoscape: true,
     express: app
 });
-
 app.set("views", "./static/template")
 app.set("view engine", "html");
+
+//jsonのフォーマット設定
 app.set("json spaces", 2);
+
 //セッションミドルウェア
 app.use(session(sess));
+
 //アクセスログミドルウェア
 app.use(function (req, res, next) {
     const reqUrl = req.protocol + "://" + req.get("host") + req.originalUrl;
@@ -52,18 +61,19 @@ app.use(function (req, res, next) {
     console.log(`${reqDate} Access "${reqUrl}" from ${srcIpAddr}`);
     next();
 });
+
 //postデータハンドリングのためのミドルウェア
 app.use(express.urlencoded({ extended: true }));
+
 //静的ファイルのルーティングを行うミドルウェア
 app.use(express.static("./static", { fallthrough: true }));
-
 
 //ルーティングテスト
 app.get("/test", function (req, res) {
     res.send("テストです")
 });
 
-//WebAPIとuserIdをgetするテスト
+//WebAPI(Jsonを返す)テストとuserIdをURLから取得するテスト
 app.get("/api/:userId", function (req, res) {
     res.json(
         {
