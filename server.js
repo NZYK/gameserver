@@ -5,6 +5,12 @@ require('dotenv').config();
 const express = require("express");
 const app = express();
 const port = 8080;
+const http = require("http");
+const server = http.createServer(app);
+
+//SocketIOの初期設定
+const { Server } = require("socket.io");
+const io = new Server(server);
 
 //セッションモジュールをインポート（サーバー側にセッションデータを持たせる）
 const session = require("express-session");
@@ -19,24 +25,29 @@ if (process.env.USE_DB_FOR_SESSION === "mysql") {
         user: process.env.MYSQL_USERNAME,
         password: process.env.MYSQL_PASSWORD,
         database: process.env.MYSQL_DATABASE
-    };
+    }
     sessionStore = new mysqlSession(mysqlOptions);
 } else {
     sessionStore = new session.MemoryStore;
-};
+}
 //セッション用の設定
 const sess = {
     secret: "NZYKsecret",
     resave: false, //セッション内容に変更がないときにはデータをリセーブしない
     saveUninitialized: true, //初期化されていないセッションも保存するか:true
     cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 }, //保持期間 1000ms * 60sec * 60min * 24hours * 30 days
-    store: sessionStore //セッションの保存先
-};
+    store: sessionStore, //セッションの保存先
+    name: "NZYKconnect.sid"
+}
 //本番環境に移したときのみ実行する設定
 if (app.get("env") === "production") {
     app.set("trust proxy", 1);//プロキシサーバーから1番目をクライアントのIPとして扱う
     sess.cookie.secure = true;//HTTPSによるアクセス時のみcookieを有効化する
-};
+}
+
+io.use(function(socket,next){
+    session(sess)(socket.request,socket.request.res || {}, next);
+})
 
 //ほぼjinja2のテンプレートエンジンをインポート
 const jinja = require("nunjucks");
@@ -67,6 +78,11 @@ app.use(express.urlencoded({ extended: true }));
 
 //静的ファイルのルーティングを行うミドルウェア
 app.use(express.static("./static", { fallthrough: true }));
+
+//socketIOの中にもセッションミドルウェアを通してrequestオブジェクトを扱えるようにする（超重要）
+io.use(function(socket,next){
+    session(sess)(socket.request,socket.request.res || {}, next);
+})
 
 //ルーティングテスト
 app.get("/test", function (req, res) {
@@ -99,6 +115,17 @@ app.post("/create", function (req, res) {
     res.render("create.html");
 });
 
+//お名前ページ req.session.プロパティ名で各種プロパティを保存
+app.get("/login", function (req, res) {
+    res.render("login.html");
+});
+app.post("/login", function (req, res) {
+    console.log(req.body);
+    req.session.userName = req.body.userName;
+    console.log("このユーザーの名前は" + req.session.userName + "で登録されました。")
+    res.redirect("/");
+});
+
 //セッション利用のテスト
 app.get("/session", function (req, res) {
     if (req.session.counter) {
@@ -125,7 +152,26 @@ app.use(function (req, res, next) {
     res.status(404).send('ERROR 404 not found');
 });
 
+//socketIO処理記述部
+io.on("connection", (socket) => {
+    const sessionData = socket.request.session;
+    let userName;
+    if ( sessionData.userName ){
+        userName = sessionData.userName;
+    } else {
+        userName = "ななし";
+    }
+    socket.broadcast.emit("chat message",""+userName+"さんが入室しました")
+
+    socket.on("chat message", (msg) => {
+        io.emit("chat message", msg);
+    })
+    socket.on("disconnect", () => {
+        socket.broadcast.emit("chat message",""+userName+"さんが退室しました");
+    })
+})
+
 //起動
-app.listen(port, () => {
+server.listen(port, () => {
     console.log("server started on port:" + port);
 });
