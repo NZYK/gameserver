@@ -45,10 +45,6 @@ if (app.get("env") === "production") {
     sess.cookie.secure = true;//HTTPSによるアクセス時のみcookieを有効化する
 }
 
-io.use(function(socket,next){
-    session(sess)(socket.request,socket.request.res || {}, next);
-})
-
 //ほぼjinja2のテンプレートエンジンをインポート
 const jinja = require("nunjucks");
 jinja.configure("./static/template", {
