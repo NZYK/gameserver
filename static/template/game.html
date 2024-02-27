@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}
+<title>カーリング！</title>
+{% endblock %}
+{% block content %}
+<div class="container">
+	<div class="m-y-auto">
+		<div class="row">
+			<h1 class="h3 mt-3">カーリングゲーム！</h1>
+			<button class="col-2" onclick="getBack();">戻る</button>
+		</div>
+		<div class="row">
+			<canvas class="" id="gamecanvas" width="481" height="850"></canvas>
+		</div>
+	</div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="module" src="./js/client.js"></script>
+	<script>
+		function getBack() {
+			window.location.href = ("/");
+		}
+	</script>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}
+<title>lobby</title>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center text-center">
+        <div class="mt-4 mb-3">
+            <h1 class="h3 mb-3 font-weight-normal">カーリングゲーム</h1>
+            {% if userName %}
+            {% set userNameValue = userName %}
+            {% else %}
+            {% set userNameValue = "" %}
+            {% endif %}
+            <input type="text" id="inputUserName" value="{{userNameValue}}" placeholder="ユーザーネーム">
+        </div>
+    </div>
+    <div class="row justify-content-center text-center mt-4">
+        <div class="col-3">
+            <h5>自分でルームをつくる</h5>
+            <div>
+                <div class="row">
+                    <input class="col-12" name="roomName" type="text" id="inputRoomName" placeholder="ルーム名を入力">
+                </div>
+                <div class="row mt-2">
+                    <button class="col-12" onclick="createRoom();">ルーム作成</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-9">
+            <h5>作成済みのルームに入室する</h5>
+            <table id="roomsTable" class="table table-white table-striped">
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+
+    //values = {name:value, name:value, ...}
+    function postForm(action, values = {}) {
+        //フォームオブジェクトを作成
+        const form = document.createElement('form');
+        const request = document.createElement('input');
+
+        form.method = 'POST';
+        form.action = action;
+
+        Object.keys(values).forEach((name) => {
+            const request = document.createElement('input');
+            request.type = 'hidden';
+            request.name = name;
+            request.value = values[name];
+            form.appendChild(request);
+        });
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function isElementFilledById(id) {
+        const target = document.getElementById(id).value;
+        (target === "") ? flg = true : flg = false;
+        return flg;
+    }
+    function createRoom() {
+        if (isElementFilledById("inputUserName")) {
+            window.alert("ユーザーネームとルームネームは必須です。");
+        } else if (isElementFilledById("inputRoomName")) {
+            window.alert("ユーザーネームとルームネームは必須です。");
+        } else {
+            const values = {
+                userName: document.getElementById("inputUserName").value,
+                roomName: document.getElementById("inputRoomName").value
+            };
+            postForm("createRoom", values);
+        }
+    }
+    function joinRoom(id) {
+        if (isElementFilledById("inputUserName")) {
+            window.alert("ユーザーネームは必須です。");
+        } else {
+            const values = {
+                userName: document.getElementById("inputUserName").value,
+                roomId: id
+            };
+            postForm("joinRoom", values);
+        }
+    }
+
+    //APIからroomsJSONを取得し、Objectを返す変数
+    function getRooms() {
+        return new Promise(resolve => {
+            let obj = {}
+            fetch("/API/rooms")
+                .then(response => response.json())
+                .then(data => {
+                    Object.keys(data).forEach((roomId) => {
+                        obj[roomId] = data[roomId];
+                    });
+                    resolve(obj);
+                })
+                .catch(error => {
+                    console.error("fetching is failed", error);
+                });
+        });
+    };
+    const tableHeaders = {
+        thRoomName: "ルーム名",
+        thCreater: "作成者",
+        thRoomId: "ルームID",
+        thPlayers: "参加人数",
+        thNone: ""
+    };
+
+    //ルームテーブルを表示する関数
+    async function createRoomsTable() {
+        //roomsを取得し、ルーム数を取得
+        const rooms = await getRooms();
+        const length = Object.keys(rooms).length;
+        //roomsテーブルのエレメントを取得
+        const roomsTable = document.getElementById("roomsTable");
+        //子要素を削除(初期化)
+        while (roomsTable.firstChild) {
+            roomsTable.removeChild(roomsTable.firstChild);
+        }
+
+        //ルーム数が0だった時の処理
+        if (length === 0) {
+            const divAlert = roomsTable.appendChild(document.createElement("div"));
+            divAlert.className = "alert alert-secondary";
+            divAlert.appendChild(document.createTextNode("まだルームはありません"));
+            //ルーム数が0以上だった時の処理
+        } else {
+            //表のヘッダーを出力
+            const trHeader = roomsTable.appendChild(document.createElement("tr"));
+            Object.values(tableHeaders).forEach((value) => {
+                const thHeader = trHeader.appendChild(document.createElement("th"));
+                thHeader.appendChild(document.createTextNode(value));
+            });
+            //表の中身を出力
+            Object.values(rooms).forEach((room) => {
+                //tr生成
+                const trRoom = roomsTable.appendChild(document.createElement("tr"));
+                //ルーム名を追加
+                const tdRoomName = trRoom.appendChild(document.createElement("td"));
+                tdRoomName.appendChild(document.createTextNode(room.roomName));
+                //作成者を追加
+                const tdCreater = trRoom.appendChild(document.createElement("td"));
+                tdCreater.appendChild(document.createTextNode(room.creater));
+                //ルームIDを追加
+                const tdRoomId = trRoom.appendChild(document.createElement("td"));
+                tdRoomId.appendChild(document.createTextNode(room.roomId));
+                //参加人数を追加
+                const tdPlayers = trRoom.appendChild(document.createElement("td"));
+                let counter = 0;
+                Object.values(room.players).forEach((player) => {
+                    if (player.connection) counter += 1;
+                });
+                tdPlayers.appendChild(document.createTextNode(counter));
+                //入室ボタンを追加
+                const tdButton = trRoom.appendChild(document.createElement("td"));
+                const joinButton = tdButton.appendChild(document.createElement("button"));
+                joinButton.id = room.roomId;
+                joinButton.setAttribute("onclick", "joinRoom(this.id);");
+                joinButton.appendChild(document.createTextNode("入室"));
+
+            })
+        }
+    };
+    window.onload = (e) => {
+        createRoomsTable();
+    };
+    //5秒ごとにルーム情報を更新
+    setInterval (async () => createRoomsTable(),5000);
+</script>
+{% endblock %}
