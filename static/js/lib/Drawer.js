@@ -306,24 +306,27 @@ export class Drawer {
     }
     user(user = {},nowTurn) {
         this.ctx.save();
+        let a = 0.5;
+        if (user.userId === nowTurn){
+            this.ctx.lineWidth = 3;
+            a = 1;
+        }
         this.ctx.beginPath();
         this.ctx.arc(user.mouseX, user.mouseY, 5, 0, Math.PI * 2, true);
         this.ctx.closePath();
-        this.ctx.fillStyle = "rgb(255,255,255)";
+        this.ctx.strokeStyle = "rgba(000,000,000,"+a+")";
+        this.ctx.fillStyle = "rgba(255,255,255,"+a+")";
         switch (user.team) {
             case "A" :
-                this.ctx.fillStyle = "rgb(230,230,100)";
+                this.ctx.fillStyle = "rgba(230,230,100,"+a+")";
                 break;
             case "B" :
-                this.ctx.fillStyle = "rgb(255,40,80)";
+                this.ctx.fillStyle = "rgba(255,40,80,"+a+")";
         }
         this.ctx.fill();
-        if (user.userId === nowTurn){
-            this.ctx.lineWidth = 3;
-        }
         this.ctx.stroke();
         this.ctx.font = "20px Roboto medium";
-        this.ctx.fillStyle =  "rgb(000,000,000)";
+        this.ctx.fillStyle =  "rgba(000,000,000,"+a+")";
         this.ctx.fillText(user.userName, user.mouseX - 5, user.mouseY - 10, 130);
         this.ctx.restore();
     }
