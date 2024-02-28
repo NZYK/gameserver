@@ -79,7 +79,7 @@ socket.on("serverData", (state) => {
 
   drawer.background(); //背景描写
   drawer.roomName(state.roomName); //ルーム名描写
-  drawer.teamBoard(state.team,state.nowTurn); //チームボード描写
+  drawer.teamBoard(state.team,state.nowTurn,players); //チームボード描写
   if (game === undefined) { //ゲームオブジェクト作成前
     console.log("ロビー描画")
     drawLobby(state);

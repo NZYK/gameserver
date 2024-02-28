@@ -307,12 +307,19 @@ io.on("connection", (socket) => {
         socket.join(roomId);
 
         //切断時の動作を追加
-        socket.on("disconnect", () => {
-            //コネクションステータスをfalseにし、チームから削除
+        socket.on("disconnect", async () => {
+            //コネクションステータスをfalseにし30秒待機
             console.log("disconnect");
             player.connection = false;
             try {
-                delete room.team[player.team][player.userId];
+                await new Promise((resolve) => {
+                    setInterval(() => {
+                        resolve()
+                    }, 30 * 1000);
+                })
+                console.log("await終了", player.connection);
+                //5秒待ってもconnectionイベントが起きなければ(connection = falseのままなら)teamからユーザーを削除
+                if (player.connection === false) delete room.team[player.team][player.userId];
             } catch {
             }
         })
@@ -479,21 +486,19 @@ function updataGame(room) {
     let turnCounter = room.turnCounter;
     //ターンのチームのメンバー数
     let length = Object.keys(room.team[turn]).length;
-    //Aチームのときはカウンターで除した余り　Bチームのときはカウンターに-1した値で除した余り
+    // 0 0 1 1 2 2 と増える数字をチームのメンバ数で除した余り
     let selecter = Math.floor(turnCounter / 2) % length;
     //結果をターンに代入
     room.nowTurn = Object.keys(room.team[turn])[selecter];
-    console.log(selecter);
     //結果表示のためのポーズシーン
     if (scene === Scenes.Pose) {
-        if (poseCounter === 30 * 3) {
+        if (poseCounter === 30 * 5) {
             scene = Scenes.BeforeShot;
             stones = [];
             poseCounter = 0;
         } else {
             poseCounter = poseCounter + 1;
         }
-
     }
 
     //ショット前のシーン
@@ -525,14 +530,12 @@ function updataGame(room) {
 
             //クリックされたら射出フェーズへ移動
             if (leftClickStatus === "YES") {
-                console.log("射出フェーズへ PositionStatusを2に")
                 PositionStatus = 2;
             }
         } //射出フェーズ
         if (PositionStatus === 2) {
             //右クリックでポジション決めフェーズへ戻る(キャンセル機能)
             if (rightClickStatus === "YES") {
-                console.log("右クリックを検出 PositionStatusを1に")
                 PositionStatus = 1;
             }
             //ストーンとマウスとの距離で打ち出す力と方向を定める
@@ -544,13 +547,10 @@ function updataGame(room) {
             }
             //左クリックし続けるとカウンタを貯める
             if (leftClickStatus === "YES") {
-                console.log("ホールド中")
                 clickCounter = clickCounter + 1;
-                console.log("clickCounter", clickCounter);
             }
             //ホールドしたら射出
             if (clickCounter === 13) {
-                console.log("射出！")
                 //ポジションステータスは1に戻しておく
                 PositionStatus = 1;
                 //カウンターも0に戻しておく

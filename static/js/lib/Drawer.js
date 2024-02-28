@@ -107,19 +107,20 @@ export class Drawer {
         this.ctx.restore();
     }
 
-    teamBoard(team = { A: {}, B: {} }, nowTurn) {
+    teamBoard(team = { A: {}, B: {} }, nowTurn,players) {
         //Aチーム
         this.ctx.save();
         this.ctx.beginPath();
         this.ctx.rect(350, 160, 120, 250);
         this.ctx.strokeStyle = "rgb(000,000,000)"
-        this.ctx.fillStyle = "rgb(230,230,100)";
+        this.ctx.fillStyle = "rgb(245,245,192)";
         this.ctx.fill();
         this.ctx.fillStyle = "rgb(000,000,000)";
         this.ctx.font = "bold 15px Century Gothic";
         Object.keys(team.A).forEach((userId, i) => {
-            let selecter = (userId === nowTurn) ? "◉ " : "◯ "
-            this.ctx.fillText(selecter + team.A[userId], 355, 200 + 20 * i, 110);
+            let selecter = (userId === nowTurn) ? "👉" : "";
+            let connection = (players[userId].connection) ? "🟢" : "🔴";
+            this.ctx.fillText(selecter + connection + team.A[userId], 355, 200 + 20 * i, 110);
         });
         this.ctx.stroke();
         this.ctx.restore();
@@ -129,13 +130,14 @@ export class Drawer {
         this.ctx.beginPath();
         this.ctx.rect(350, 410, 120, 250);
         this.ctx.strokeStyle = "rgb(000,000,000)"
-        this.ctx.fillStyle = "rgb(255,40,80)";
+        this.ctx.fillStyle = "rgb(255,168,184)";
         this.ctx.fill();
-        this.ctx.fillStyle = "rgb(255,255,255)";
+        this.ctx.fillStyle = "rgb(000,000,000)";
         this.ctx.font = "bold 15px Century Gothic";
         Object.keys(team.B).forEach((userId, i) => {
-            let selecter = (userId === nowTurn) ? "◉ " : "◯ "
-            this.ctx.fillText(selecter + team.B[userId], 355, 450 + 20 * i, 110);
+            let selecter = (userId === nowTurn) ? "👉" : "";
+            let connection = (players[userId].connection) ? "🟢" : "🔴";
+            this.ctx.fillText(selecter + connection + team.B[userId], 355, 450 + 20 * i, 110);
         });
         this.ctx.stroke();
         this.ctx.restore();
