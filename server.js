@@ -41,6 +41,7 @@ const sess = {
 }
 //本番環境に移したときのみ実行する設定
 if (app.get("env") === "production") {
+    console.log("今本番環境です！")
     app.set("trust proxy", 1);//プロキシサーバーから1番目をクライアントのIPとして扱う
     sess.cookie.secure = true;//HTTPSによるアクセス時のみcookieを有効化する
 }
@@ -309,7 +310,6 @@ io.on("connection", (socket) => {
         //切断時の動作を追加
         socket.on("disconnect", async () => {
             //コネクションステータスをfalseにし30秒待機
-            console.log("disconnect");
             player.connection = false;
             try {
                 await new Promise((resolve) => {
@@ -317,7 +317,6 @@ io.on("connection", (socket) => {
                         resolve()
                     }, 30 * 1000);
                 })
-                console.log("await終了", player.connection);
                 //5秒待ってもconnectionイベントが起きなければ(connection = falseのままなら)teamからユーザーを削除
                 if (player.connection === false) delete room.team[player.team][player.userId];
             } catch {
@@ -443,7 +442,7 @@ function updataRoom(room) {
                     //breakする
                     doCreate = false;
                 } else {
-                    console.log("人数がたりません")
+                    ;
                 }
             }
         }
