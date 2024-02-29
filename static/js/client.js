@@ -19,6 +19,8 @@ window.onload = function () {
   g.font = "30px Roboto medium";
   drawer = new Drawer(g);
   player = new Player();
+  //入力に変化がなくても5秒おきにplayerオブジェクトをサーバーに送信
+  setInterval(player.emitThis(),5*1000);
   canvas.addEventListener("mousemove", (e) => { player.getMouse(e) }, false);
   canvas.addEventListener("mousedown", (e) => { player.mouseDown(e) }, false);
   canvas.addEventListener("mouseup", (e) => { player.mouseUp(e) }, false);
