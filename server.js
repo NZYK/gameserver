@@ -324,6 +324,9 @@ io.on("connection", (socket) => {
         })
         //クライアントデータの受け付け
         socket.on("clientData", (client) => {
+            //本番環境ではdisconnectイベントが20秒くらい遅れて発行されてしまうことから、再接続後にdisconnectイベントが実行されてしまう
+            //事象が発生した。そのため、接続時だけでなく、clientDataを受信するたびにconnectionステータスをtrueにする仕様に変更
+            player.connection = true;
             player.mouseX = client.mouseX;
             player.mouseY = client.mouseY;
             player.leftClickStatus = client.leftClickStatus;
